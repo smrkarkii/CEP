@@ -1,4 +1,4 @@
-export type PostType = 'text' | 'image' | 'video';
+export type PostType = "text" | "image";
 
 export interface Post {
   id: string;
@@ -8,7 +8,7 @@ export interface Post {
   title: string;
   content: string;
   timestamp: string;
-  type: PostType;
+  file_type: PostType;
   likes: number;
   imageUrl?: string;
 }
