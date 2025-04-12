@@ -31,19 +31,19 @@ to explore the interactive Swagger UI documentation.
 
 ---
 
-## Un-Clear API parameters
-collection_name: str
+## Potentially-Ambiguous API parameters
+- `collection_name`: `str`
  - it is name of collection to store data to
  - could be any string, just remember to use the same string while adding data and fetching data
 
-metadata: dict
- - it is metadata to store with data
- - could be any dictionary, just remember to use the same dictionary while adding data and fetching data
+- `metadata`: `dict`
+  - it is metadata to store with data
+  - could be any dictionary, just remember to use the same dictionary while adding data and fetching data
 
- e.g. we can give the creators information while adding information and filter from anomg entries with matching creators metadata
- e.g. give metadata: `{"author": "Anon", "date": "2025-04-12"}` while adding data and you can filter by same metadata while querying llm
+  - e.g. we can give the creators information while adding information and filter from anomg entries with matching creators metadata
+  - e.g. give metadata: `{"author": "Anon", "date": "2025-04-12"}` while adding data and you can filter by same metadata while querying llm
 
- - Avoid Checking `Send empty value` checkmark from fastapi `/docs`, if you are giving no image file as input because checking it is giving string value but backend expects File. This is the actual error string: "Value error, Expected UploadFile, received: <class 'str'>"
+ - Avoid Checking `Send empty value` checkmark from fastapi `/docs`, if you are giving no image file as input because checking it gives string value but backend expects File. This is the actual error string: "Value error, Expected UploadFile, received: <class 'str'>"
 
 ## 📚 References
 
