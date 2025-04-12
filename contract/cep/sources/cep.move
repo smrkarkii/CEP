@@ -1,24 +1,39 @@
-module cep::cep ;
+module cep::contenteconomy;
 
     use std::string::{String};
     use sui::table::{Self, Table};
     use sui::vec_set::{Self, VecSet};
     use cep::roles::{AdminCap};
-    use std::vector;
+    use std::vector; 
+    use sui::coin::{Coin};
+    use sui::sui::{SUI};
+    use sui::balance::{Balance};
+    use cep::exchange::{Self, Exchange};
 
     //Errors
 
-    //constants
-    const EAlreadyRegisteredBlob:u64 = 0;
+    // Error constants
+    const EAlreadyRegisteredBlob: u64 = 0;
+    const EInsufficientSupply: u64 = 1;
+    const EInsufficientFunds: u64 = 2;
+    const EInvalidTokenAmount: u64 = 3;
+    const EUserNotFound: u64 = 4;
+    const ETokenNotFound: u64 = 5;
+    const EExchangeNotFound: u64 = 6;
+
+    const PLATFORM_FEE: u64 = 250; // 2.5%
 
     //structs
 
-    public struct ContentRegistry has key, store {
+    public struct ContentRegistry has key {
         id: UID,
         user_engagement:Table<address, u64>,//points/engangement per  user
-        registered_content:vector<ID>,
-        // registered_blobs:vector<ID>,
-        content_creator:Table<String, address> //owner of blob
+        // registered_content:vector<ID>,//arrays of content id
+        content_creator:Table<String, address>,//owner of blob
+        token_holders:Table<address, Table<String, u64>>,//track ueers to theri token balances
+        user_content:Table<address, vector<ID>>,//all content of a iser
+        exchanges: Table<String, ID>,
+        creators_list:vector<ID>//list of userprofile id
         //what more needed?
     }
 
@@ -27,8 +42,7 @@ module cep::cep ;
         blob_id: String, 
         owner: address, 
         title: String, 
-        description: String, 
-        tag: vector<String>,
+        description: String,
         file_type: String, 
     }
 
@@ -37,26 +51,8 @@ module cep::cep ;
         name:String,
         bio:String,
         total_engagement:u64,
-        published_contents:vector<ID>//vector of the contents id
-    }
-
-    public struct CreatorToken has key {
-        id:UID,
-        name:String,
-        symbol:String,
-        total_supply:u64,
-        creator:address,
-    }
-
-    // Token tier pricing structure (SUI amount)
-    public struct TokenPricing has key, store {
-        id: UID,
-        tier_1_price: u64, // < 100 engagement
-        tier_2_price: u64, // 100-199 engagement
-        tier_3_price: u64, // 200-499 engagement
-        tier_4_price: u64, // 500-999 engagement
-        tier_5_price: u64, // 1000-4999 engagement
-        tier_6_price: u64  // 5000+ engagement
+        published_contents:vector<ID>,//vector of the contents id,
+        creator_coin:Option<String>,//token-name or symbol of the users_creator
     }
 
     fun init(ctx: &mut TxContext) {
@@ -64,31 +60,28 @@ module cep::cep ;
         let content_registry = ContentRegistry {
             id: object::new(ctx),
             user_engagement: table::new(ctx),
-            registered_content:vector::empty(),
-            content_creator:table::new(ctx)
-        };
-
-        let token_pricing = TokenPricing {
-            id: object::new(ctx),
-            tier_1_price: 10_000_000, // 0.01 SUI
-            tier_2_price: 20_000_000, // 0.02 SUI
-            tier_3_price: 50_000_000, // 0.05 SUI
-            tier_4_price: 100_000_000, // 0.1 SUI
-            tier_5_price: 500_000_000, // 0.5 SUI
-            tier_6_price: 1_000_000_000  //1 SUI
+            // registered_content:vector::empty(),
+            content_creator:table::new(ctx),
+            token_holders:table::new(ctx),
+            exchanges:table::new(ctx),
+            user_content: table::new(ctx),
+            creators_list:vector::empty()
         };
 
         transfer::share_object(content_registry);
-        transfer::share_object(token_pricing);
     }
 
 // ==== PUblic functions ====
 
 //user profile functions
 
-    public fun create_user_profile(
+    public fun create_user_profile<T>(
         name:String,
         bio:String,
+        content_registry:&mut ContentRegistry,
+        creator_token_name:String,
+        creator_coin: &mut Coin<T>,
+        initial_amount:u64,
         ctx:&mut TxContext
     ) {
         let user_profile = UserProfile {
@@ -96,65 +89,89 @@ module cep::cep ;
             name,
             bio,
             total_engagement: 0,
-            published_contents:vector::empty()
+            published_contents:vector::empty(),
+            creator_coin: option::none()
         };
+        //create exchange 
+        let exchange_admin_cap = exchange::new_funded<T>(creator_coin, initial_amount, ctx);
+        let exchange_id = object::id(&exchange_admin_cap);
+        // Store the exchange admin cap with the creator
+        transfer::public_transfer(exchange_admin_cap, ctx.sender());
+        // Register the exchange in the content registry
+        table::add(&mut content_registry.exchanges, creator_token_name, exchange_id);
+        content_registry.creators_list.push_back(object::id(&user_profile));
         transfer::transfer(user_profile, ctx.sender());
     }
 
+    public fun buy_creator_tokens<T>(
+        exchange:&mut Exchange<T>,
+        content_registry: &mut ContentRegistry,
+        creator_token_name: String,
+        payment: Coin<SUI>,
+        amount: u64,
+        ctx: &mut TxContext
+        ) {
+            // Get the exchange ID for the creator token
+        assert!(table::contains(&content_registry.exchanges, creator_token_name), ETokenNotFound);
+        let creator_coin = exchange::exchange_all_for_creator_coin<T>(exchange, payment, ctx);
 
-//creator token functions only admin
-    public fun create_token(
-        _:&AdminCap,
-        name:String,
-        symbol:String,
-        total_supply:u64,
-        creator:address,
-        ctx:&mut TxContext
-    )
-    {
-        let creator_token = CreatorToken {
-            id:object::new(ctx),
-            name,
-            symbol,
-            total_supply,
-            creator
+        transfer::public_transfer(creator_coin, ctx.sender());
+
+            // Update token holdings in registry
+        let sender = tx_context::sender(ctx);
+        if (!table::contains(&content_registry.token_holders, sender)) {
+            table::add(&mut content_registry.token_holders, sender, table::new(ctx));
         };
-        transfer::transfer(creator_token, creator);
-    }
+        
+        let token_table = table::borrow_mut(&mut content_registry.token_holders, sender);
+        
+        if (table::contains(token_table, creator_token_name)) {
+            let token_count = table::borrow_mut(token_table, creator_token_name);
+            *token_count = *token_count + amount;
+        } else {
+            table::add(token_table, creator_token_name, amount);
+        }
+    } 
 
-    public fun buy_token(creator_token:&CreatorToken, token_number:u64) {
-        //decrease the supply of total tokens
-        //mint the token and transfer it
+       // Sell creator tokens
+    public fun sell_creator_tokens<T>(
+        exchange:&mut Exchange<T>,
+        content_registry: &mut ContentRegistry,
+        creator_token_name: String,
+        creator_coin: Coin<T>,
+        amount: u64,
+        ctx: &mut TxContext
+    ) {
+        // Validate inputs
+        assert!(amount > 0, EInvalidTokenAmount);
+        
+        // Get the exchange ID for the creator token
+        assert!(table::contains(&content_registry.exchanges, creator_token_name), ETokenNotFound);        
+        // Execute the exchange
+        let sui_coins = exchange::exchange_all_for_sui<T>(exchange, creator_coin, ctx);
+        
+        // Transfer the SUI coins to the seller
+        transfer::public_transfer(sui_coins, tx_context::sender(ctx));
+        
+        // Update token holdings in registry
+        let sender = tx_context::sender(ctx);
+        assert!(table::contains(&content_registry.token_holders, sender), EUserNotFound);
+        
+        let token_table = table::borrow_mut(&mut content_registry.token_holders, sender);
+        
+        assert!(table::contains(token_table, creator_token_name), ETokenNotFound);
+        let token_count = table::borrow_mut(token_table, creator_token_name);
+        assert!(*token_count >= amount, EInsufficientFunds);
+        
+        *token_count = *token_count - amount;
     }
+    
 
-     // Get token tier based on engagement
-    public fun get_token_tier(engagement: u64): u8 {
-        if (engagement < 100) { 1 }
-        else if (engagement < 200) { 2 }
-        else if (engagement < 500) { 3 }
-        else if (engagement < 1000) { 4 }
-        else if (engagement < 5000) { 5 }
-        else { 6 }
-    }
-
-    // Get token price based on tier
-    public fun get_token_price(
-        token_pricing: &TokenPricing,
-        tier: u8
-    ): u64 {
-        if (tier == 1) { token_pricing.tier_1_price }
-        else if (tier == 2) { token_pricing.tier_2_price }
-        else if (tier == 3) { token_pricing.tier_3_price }
-        else if (tier == 4) { token_pricing.tier_4_price }
-        else if (tier == 5) { token_pricing.tier_5_price }
-        else { token_pricing.tier_6_price }
-    }
     
     public fun mint_content (
         title: String,
         description: String,
         blob_id: String, 
-        tag: vector<String>, 
         file_type: String,
         content_registry: &mut ContentRegistry,
         ctx: &mut TxContext
@@ -169,14 +186,14 @@ module cep::cep ;
             owner: sender, 
             title,
             description, 
-            tag,
             file_type, 
         }; 
         content_registry.content_creator.add(blob_id, sender);
         let id = object::id(&content);
-        content_registry.registered_content.push_back(id);
-
-        table::add(&mut content_registry.content_creator, blob_id, sender);
+        // content_registry.registered_content.push_back(id);
+        let vec = content_registry.user_content.borrow_mut(sender);
+        vec.push_back(id);
+        
         // transfer the content ownership to sender
         transfer::transfer(content, sender);
     }
@@ -193,5 +210,15 @@ module cep::cep ;
         user_profile.total_engagement = points;
     }
 
+    //getter functions
+    public fun get_all_contents_by_user(content_registry:& ContentRegistry, user:address):vector<ID> {
+          *content_registry.user_content.borrow(user)
+    }
+    
+    public fun get_all_content_creators_user_profile(content_registry:& ContentRegistry):vector<ID> {
+          content_registry.creators_list
+    }
+
+    
 
 

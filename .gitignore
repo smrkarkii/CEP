@@ -1,0 +1,73 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.vscode/
+.env
+.env.*
+
+# Build output
+dist/
+build/
+.next/
+out/
+.cache/
+artifacts/
+coverage/
+typedoc/
+*.tsbuildinfo
+
+# Logs
+*.log
+
+# System
+.DS_Store
+Thumbs.db
+*.swp
+
+# Smart contracts (Hardhat / Foundry / Sui)
+artifacts/
+cache/
+coverage/
+typechain/
+foundry.toml
+forge-std/
+*.json
+*.db
+*.lock
+
+# Python (AI)
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+.envrc
+.ipynb_checkpoints/
+
+# Jupyter notebooks outputs
+*.ipynb
+
+# VSCode & JetBrains IDE
+.vscode/
+.idea/
+
+# OS-specific
+*.DS_Store
+*.bak
+
+# Static files
+*.log
+*.zip
+*.tar
+*.tgz
+
+# Misc
+*.pem
+*.key
+*.crt
+*.pid
+*.sqlite
+*.sqlite3
