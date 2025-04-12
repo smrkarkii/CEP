@@ -1,3 +1,90 @@
+### ⚙️ Setup & Installation
+
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/yourusername/social-media-backend.git
+   cd social-media-backend
+   ```
+
+2. **Configure Environment Variables**  
+   Create a `.env` file in the root directory:
+   ```dotenv
+   MONGODB_URI=<your-mongodb-uri>
+   PORT=3000
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+
+4. **Run the server**
+
+   - **Development mode (with live reload):**
+     ```bash
+     pnpm run dev
+     ```
+
+   - **Production mode:**
+     ```bash
+     pnpm run start
+     ```
+
+---
+
+### 📬 API Endpoints
+
+#### `GET /users`
+Returns a list of all users and their stats.
+
+#### `POST /users/:id/like`
+Like a post and update user's engagement.
+```json
+{
+  "postId": "<post_id>"
+}
+```
+
+#### `POST /users/:id/follow`
+Follow another user.
+```json
+{
+  "targetUserId": "<other_user_id>"
+}
+```
+
+#### `POST /posts/:id/comment`
+Add a comment to a post.
+```json
+{
+  "userId": "<user_id>",
+  "comment": "Great post!"
+}
+```
+
+---
+
+### 🛠️ To Do (Optional Improvements)
+
+- User authentication (JWT)
+- Like/unlike toggle logic
+- Profile routes (view user-specific data)
+- Rate limiting or throttling
+
+---
+
+### 💡 Tip
+
+You can test the API with **Postman**, **Insomnia**, or browser extensions like **REST Client**.
+
+---
+
+### 🎉 Happy coding!
+
+
+
+---
+
 # 1. Project Description:
 
 # Blockchain User Content API Requirements
