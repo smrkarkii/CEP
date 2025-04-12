@@ -1,26 +1,30 @@
 {
   "name": "the-backend",
   "version": "1.0.0",
-  "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smrkarkii/CEP.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.8.0",
+  "bugs": {
+    "url": "https://github.com/smrkarkii/CEP/issues"
+  },
+  "homepage": "https://github.com/smrkarkii/CEP#readme",
+  "description": "",
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "mongodb": "^6.15.0",
-    "mongoose": "^8.13.2",
-    "morgan": "^1.10.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
+    "mongoose": "^8.13.2"
   }
 }
