@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 
 interface ChatDrawerProps {
   isOpen: boolean;
@@ -17,29 +18,19 @@ interface Message {
   timestamp: Date;
 }
 
-const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      content: "Hello! How are you doing today?",
-      sender: "other",
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    },
-    {
-      id: "2",
-      content: "I'm good, thanks for asking! How about you?",
-      sender: "user",
-      timestamp: new Date(Date.now() - 23 * 60 * 60 * 1000),
-    },
-    {
-      id: "3",
-      content: "Great! I was wondering if you've seen my latest post?",
-      sender: "other",
-      timestamp: new Date(Date.now() - 30 * 60 * 1000),
-    },
-  ]);
+// Create an axios instance with default configuration
+const api = axios.create({
+  baseURL: "http://localhost:8000",
+  headers: {
+    "Content-Type": "multipart/form-data",
+    Accept: "application/json",
+  },
+});
 
+const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -50,27 +41,89 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
     scrollToBottom();
   }, [messages]);
 
-  const sendMessage = () => {
-    if (newMessage.trim()) {
-      const message: Message = {
+  const sendMessage = async () => {
+    if (newMessage.trim() && !isLoading) {
+      setIsLoading(true);
+      console.log("Sending message:", newMessage);
+
+      // Add user message immediately
+      const userMessage: Message = {
         id: Date.now().toString(),
         content: newMessage,
         sender: "user",
         timestamp: new Date(),
       };
-      setMessages([...messages, message]);
-      setNewMessage("");
+      setMessages((prev) => [...prev, userMessage]);
 
-      // Simulate response
-      setTimeout(() => {
-        const response: Message = {
+      try {
+        console.log("Adding to vector DB...");
+
+        // Step 1: Add message to vector database
+        const addDataFormData = new FormData();
+        addDataFormData.append("text", newMessage);
+        addDataFormData.append("collection_name", "chat_collection");
+        addDataFormData.append("add_metadata", "true");
+        addDataFormData.append("metadata", JSON.stringify({ source: "chat" }));
+
+        const addDataResponse = await api.post(
+          "/add_data_with_image",
+          addDataFormData
+        );
+        console.log("Vector DB Response:", addDataResponse.data);
+
+        // Step 2: Get AI response
+        const chatFormData = new FormData();
+        chatFormData.append("query", newMessage);
+        chatFormData.append("collection_name", "chat_collection");
+        chatFormData.append(
+          "metadata_filter",
+          JSON.stringify({ source: "chat" })
+        );
+        chatFormData.append("limit", "50");
+        chatFormData.append("use_metadata", "true");
+
+        console.log("Getting AI response...");
+        const chatResponse = await api.post(
+          "/chat_with_image_rag",
+          chatFormData
+        );
+        console.log("AI Response:", chatResponse.data);
+
+        // Add AI response to messages
+        const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
-          content: "Thanks for your message! I'll get back to you soon.",
+          content:
+            chatResponse.data.response ||
+            "I apologize, but I couldn't process your request.",
           sender: "other",
           timestamp: new Date(),
         };
-        setMessages((prev) => [...prev, response]);
-      }, 1000);
+        setMessages((prev) => [...prev, aiMessage]);
+      } catch (error: any) {
+        console.error("Chat error:", error);
+        console.error("Error details:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
+
+        // Add error message
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: `Error: ${
+            error.response?.data?.detail ||
+            error.message ||
+            "Unknown error occurred"
+          }`,
+          sender: "other",
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      } finally {
+        setIsLoading(false);
+        setNewMessage("");
+        console.log("Request completed");
+      }
     }
   };
 
@@ -86,11 +139,13 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
           <div className="flex items-center gap-2">
             <Avatar>
               <AvatarImage src="" />
-              <AvatarFallback>CN</AvatarFallback>
+              <AvatarFallback>AI</AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-medium">Chat with Creator</h3>
-              <p className="text-xs text-muted-foreground">Online</p>
+              <h3 className="font-medium">AI Assistant</h3>
+              <p className="text-xs text-muted-foreground">
+                {isLoading ? "Thinking..." : "Online"}
+              </p>
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
@@ -139,8 +194,9 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Type a message..."
               className="flex-1"
+              disabled={isLoading}
             />
-            <Button type="submit" size="icon">
+            <Button type="submit" size="icon" disabled={isLoading}>
               <Send className="h-4 w-4" />
             </Button>
           </form>
