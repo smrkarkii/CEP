@@ -46,7 +46,3 @@ total_post_engagement
  - required: warlus_blob_id
  - returns: integer: len(likes) + len(comments) for given warlus_blob_id
 
-
-lets do it nodejs, mongodb
-
-our `.env` file has `MONGODB_URI`
