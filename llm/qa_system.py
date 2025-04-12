@@ -66,7 +66,20 @@ class DocumentQA:
             print(f'Cant recognize model: {model_name}. Using Default model:gpt-4o model')
             response = await self.openai_api.query_openai_async(query=query, model_name='gpt-4o-mini', max_tokens=max_tokens)
             return response
-
+    
+    def generate_questions(self, text: str, model_name='gpt-4o-mini') -> List[str]:
+        """
+        Generate questions from text
+        """
+        prompt = f"""Please generate questions based on the following text: \n\n{text} \n\n"""
+        return self.query_llm(query=prompt, max_tokens = None, model_name = model_name)
+    def generate_summary(self, text: str, model_name='gpt-4o-mini') -> str:
+        """
+        Generate summary from text
+        """
+        prompt = f"""Please generate a summary based on the following text: \n\n{text} \n\n"""
+        return self.query_llm(query=prompt, max_tokens = None, model_name = model_name)
+        
     def split_document(self, document: Dict) -> List[Dict]:
         """
         Split document into overlapping chunks
