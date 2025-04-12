@@ -96,7 +96,7 @@ const Navbar = () => {
             </DropdownMenu>
           ) : (
             <Button onClick={login} variant="default" className="rounded-full">
-              Connect
+              Sign In
             </Button>
           )}
         </div>

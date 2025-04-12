@@ -1,8 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import NotFound from "@/pages/NotFoundPage";
 import HomePage from "../pages/HomePage";
-import MyLearningPage from "../pages/MyLearningPage";
-import Profile from "../pages/Profile";
 import Layout from "../layout/Layout";
 import { ProtectedRoute } from "./ProtectedRoute";
 import LoginPage from "@/pages/LoginPage";

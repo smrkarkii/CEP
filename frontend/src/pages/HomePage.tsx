@@ -6,10 +6,10 @@ import AskQuestions from "@/components/AskQuestions";
 import { Post, PostType } from "@/types/post";
 import { useLogin } from "@/context/UserContext";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { FaGoogle } from "react-icons/fa";
 
 const HomePage = () => {
-  const { isLoggedIn } = useLogin();
+  const { isLoggedIn, login } = useLogin();
   // Typed posts data with proper type definitions
   const [posts, setPosts] = useState<Post[]>([
     {
@@ -64,28 +64,26 @@ const HomePage = () => {
     },
   ]);
 
-  const handleNewPost = (post: Post) => {
-    setPosts((prevPosts) => [post, ...prevPosts]);
-  };
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Main Content Area - 8 columns on large screens */}
         <div className="lg:col-span-8 space-y-6">
           {isLoggedIn ? (
-            <UploadPanel onNewPost={handleNewPost} />
+            <UploadPanel />
           ) : (
             <div className="bg-card border border-border rounded-lg p-6 text-center">
               <h2 className="text-xl font-semibold mb-2">
                 Join the Conversation
               </h2>
               <p className="text-muted-foreground mb-4">
-                Connect your wallet to start sharing your thoughts and content
-                with the community.
+                zkLogin is a Sui primitive that provides the ability for you to
+                send transactions from a Sui address using an OAuth credential,
+                without publicly linking the two.
               </p>
-              <Button asChild>
-                <Link to="/login">Connect Wallet</Link>
+              <Button onClick={login}>
+                <FaGoogle />
+                Sign in with Google
               </Button>
             </div>
           )}

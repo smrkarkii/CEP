@@ -1,118 +1,204 @@
 import { useState } from "react";
-import { Image, FileText, Video, X, Upload } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Image,
+  FileText,
+  Video,
+  X,
+  Upload,
+  CrossIcon,
+  ImageIcon,
+  PaperclipIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { UploadContent } from "@/services/UploadServices";
+import { useEnokiFlow } from "@mysten/enoki/react";
 
-interface UploadPanelProps {
-  onNewPost: (post: any) => void;
-}
+const WALRUS_PUBLISHER_URL = import.meta.env.VITE_APP_WALRUS_PUBLISHER_URL;
 
-const UploadPanel = ({ onNewPost }: UploadPanelProps) => {
-  const [content, setContent] = useState("");
+const UploadPanel = () => {
   const [title, setTitle] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [body, setBody] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState("");
+  const [imageFileb64, setImageFileb64] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [fileSizeError, setFileSizeError] = useState(false);
+  const flow = useEnokiFlow();
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setSelectedFile(file);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const selectedFile = event.target.files[0];
 
-      // Create a preview URL for the selected file
-      const fileReader = new FileReader();
-      fileReader.onload = (event) => {
-        if (event.target && typeof event.target.result === "string") {
-          setPreviewUrl(event.target.result);
-        }
+      if (selectedFile.size > 1024 * 1024) {
+        setFileSizeError(true);
+        setFile(null);
+        return;
+      }
+
+      // Convert image file into base64
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64String = reader.result as string;
+        setImageFileb64(base64String);
       };
-      fileReader.readAsDataURL(file);
+      reader.readAsDataURL(selectedFile);
+
+      setFileSizeError(false);
+      setFile(selectedFile);
+      const imgFile =
+        selectedFile?.type === "image/png" ||
+        selectedFile?.type === "image/jpeg"
+          ? URL.createObjectURL(selectedFile)
+          : "";
+      setImageFile(imgFile);
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) return;
+  const handleUpload = async () => {
+    if (!file || !title || !body) {
+      setErrorMessage(
+        "Please fill in all required fields (title, body, and file)."
+      );
+      setTimeout(() => setErrorMessage(""), 5000);
+      return;
+    }
 
-    // Create a new post
-    const newPost = {
-      id: Date.now().toString(),
-      author: "591_68", // Default user
-      authorId: "112",
-      title,
-      content,
-      timestamp: "Just now",
-      type: selectedFile
-        ? selectedFile.type.includes("image")
-          ? "image"
-          : "text"
-        : "text",
-      imageUrl: previewUrl || undefined,
-      likes: 0,
-    };
+    setIsUploading(true);
+    setIsSuccess(false);
+    setErrorMessage("");
 
-    onNewPost(newPost);
+    try {
+      const fileType = file.type;
+      const storageInfo = await storeBlob(file, fileType);
+      console.log("Blob ID:", storageInfo.blobId);
+      setTitle("");
+      setBody("");
+      setFile(null);
+      setIsSuccess(true);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("An error occurred while uploading the file.");
+    }
 
-    // Reset form
-    setContent("");
-    setTitle("");
-    setSelectedFile(null);
-    setPreviewUrl(null);
+    setIsUploading(false);
   };
 
-  const removeFile = () => {
-    setSelectedFile(null);
-    setPreviewUrl(null);
+  const handleUploadClick = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleUpload();
+  };
+
+  const handleRemoveFile = () => {
+    setFile(null);
+    setFileSizeError(false);
+  };
+
+  const storeBlob = async (file: File, fileType: string) => {
+    const basePublisherUrl = WALRUS_PUBLISHER_URL;
+    const numEpochs = "1";
+    // const keypair = await flow.getKeypair();
+
+    const response = await fetch(
+      `${basePublisherUrl}/v1/blobs?epochs=${numEpochs}`,
+      {
+        method: "PUT",
+        body: file,
+      }
+    );
+
+    if (response.status === 200) {
+      const info = await response.json();
+      console.log(info);
+      if ("alreadyCertified" in info) {
+        // const blob = blobIdToU256(info.alreadyCertified.blobId);
+        const blob = info.alreadyCertified.blobId;
+        await UploadContent(title, body, blob, fileType, flow);
+
+        return { blobId: info.alreadyCertified.blobId };
+      } else if ("newlyCreated" in info) {
+        // const blob = blobIdToU256(info.newlyCreated.blobObject.blobId);
+        const blob = info.newlyCreated.blobObject.blobId;
+
+        await UploadContent(title, body, blob, fileType, flow);
+
+        return { blobId: info.newlyCreated.blobObject.blobId };
+      } else {
+        throw new Error("Unhandled successful response!");
+      }
+    } else {
+      throw new Error("Something went wrong when storing the blob!");
+    }
   };
 
   return (
     <Card>
       <CardContent className="p-4">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleUploadClick}>
           <div className="flex items-center gap-3 mb-4">
             <Upload />
             <p className="font-medium">Upload Content</p>
           </div>
 
-          <div className="space-y-4">
+          <div className="flex flex-col">
+            <span className="text-base font-semibold md:text-lg">Title</span>
             <input
-              type="text"
-              placeholder="Title"
+              placeholder="Title..."
+              className="h-14 w-[600px] rounded-lg border"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
               required
             />
-
-            <Textarea
-              placeholder="What's on your mind?"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="min-h-[100px]"
+          </div>
+          <div className="flex flex-col">
+            <span className="text-base font-semibold md:text-lg">Body</span>
+            <textarea
+              placeholder="Describe..."
+              className="min-h-24 w-[600px] rounded-lg border"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              required
             />
-
-            {previewUrl && (
-              <div className="relative">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-2 right-2 h-6 w-6 rounded-full"
-                  onClick={removeFile}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-full h-auto rounded-md max-h-[300px] object-contain bg-gray-100"
-                />
-              </div>
-            )}
           </div>
 
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
+          <label
+            htmlFor="file-upload"
+            className="flex w-[600px] cursor-pointer items-center justify-between rounded-2xl border px-4 py-2 font-semibold"
+          >
+            {file ? (
+              <div className="flex items-center">
+                <span>{file.name}</span>
+                <button
+                  type="button"
+                  onClick={handleRemoveFile}
+                  className="ml-4 rounded-xl bg-red-500"
+                >
+                  <CrossIcon className="w-5" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <span>Add to your content</span>
+                <div className="flex items-center gap-2 text-[#7C93C3]">
+                  <ImageIcon className="w-8" />
+                  <PaperclipIcon className="w-5" />
+                </div>
+                <input
+                  id="file-upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/png, image/jpeg, image/jpg, text/plain"
+                  onChange={handleFileChange}
+                  required
+                />
+              </>
+            )}
+          </label>
+
+          {/* <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200">
             <div className="flex gap-2">
               <Button
                 type="button"
@@ -153,8 +239,22 @@ const UploadPanel = ({ onNewPost }: UploadPanelProps) => {
             <Button type="submit" disabled={!title.trim()}>
               Post
             </Button>
-          </div>
+          </div> */}
+          <Button
+            type="submit"
+            className="mt-4"
+            disabled={isUploading || !title.trim() || !body.trim() || !file}
+          >
+            {isUploading ? "Uploading..." : "Post"}
+          </Button>
         </form>
+        {errorMessage && (
+          <p className="mt-2 text-sm text-red-500">{errorMessage}</p>
+        )}
+
+        {isSuccess && (
+          <p className="mt-2 text-sm text-green-500">Upload successful!</p>
+        )}
       </CardContent>
     </Card>
   );
