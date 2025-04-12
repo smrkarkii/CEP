@@ -3,7 +3,38 @@
 
 * Please Refer to docs/docs.md for more details about endpoints
 
-* Can you please help me make a simple nodejs api endpoint.
+## ⚙️ Setup & Installation
+
+1. **Clone the repo**
+   ```bash
+   git clone -b the-backend --single-branch https://github.com/smrkarkii/CEP.git
+   cd CEP
+   ```
+
+2. **Configure Environment Variables**  
+   Create a `.env` file in the root directory:
+   ```dotenv
+   MONGODB_URI=<your-mongodb-uri>
+   PORT=3000
+   ```
+
+3. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+4. **Run the server**
+
+   - **Development mode (with live reload):**
+     ```bash
+     npm run dev
+     ```
+
+   - **Production mode:**
+     ```bash
+     npm run start
+     ```
+---
 
 # Database Schema
 
