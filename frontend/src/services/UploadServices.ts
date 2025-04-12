@@ -6,14 +6,6 @@ const FULLNODE_URL = import.meta.env.VITE_APP_FULLNODE_URL as string;
 const NETWORK = import.meta.env.VITE_APP_NETWORK as "testnet";
 const CONTENT_REGISTRY = import.meta.env.VITE_APP_CONTENT_REGISTRY as string;
 
-export interface UploadContentParams {
-  title: string;
-  body: string;
-  blobId: string;
-  fileType: string;
-  flow: any;
-}
-
 export const UploadContent = async (
   title: string,
   body: string,
@@ -29,7 +21,7 @@ export const UploadContent = async (
     const tx = new TransactionBlock();
 
     tx.moveCall({
-      target: `${PACKAGE_ID}::cep::mint_content`,
+      target: `${PACKAGE_ID}::contenteconomy::mint_content`,
       arguments: [
         tx.pure.string(title),
         tx.pure.string(body),
