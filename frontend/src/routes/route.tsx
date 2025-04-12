@@ -5,8 +5,8 @@ import Layout from "../layout/Layout";
 import { ProtectedRoute } from "./ProtectedRoute";
 import LoginPage from "@/pages/LoginPage";
 import ChatPage from "@/pages/ChatPage";
-import ProfilePage from "../pages/Profile";
 import PostDetailPage from "@/pages/PostDetailPage";
+import CreatorPage from "../pages/CreatorPage";
 
 export const routes = createBrowserRouter([
   {
@@ -26,9 +26,9 @@ export const routes = createBrowserRouter([
         element: <ProtectedRoute redirectPath="/login" />,
         children: [
           { path: "/chat", element: <ChatPage /> },
-          { path: "/profile", element: <ProfilePage /> },
-          { path: "/profile/:id", element: <ProfilePage /> },
+          // { path: "/profile", element: <ProfilePage /> },
           { path: "/post/:id", element: <PostDetailPage /> },
+          { path: "/creator/:id", element: <CreatorPage /> },
         ],
       },
     ],

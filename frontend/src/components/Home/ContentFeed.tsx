@@ -14,7 +14,7 @@ interface Post {
   content: string;
   timestamp: string;
   imageUrl?: string;
-  type: "text" | "image" | "video";
+  file_type: "text" | "image";
   likes: number;
 }
 

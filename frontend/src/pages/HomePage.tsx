@@ -21,7 +21,7 @@ const HomePage = () => {
       content:
         "In the next ten years, Nepal's economy could experience steady growth, particularly through infrastructure development, tourism, and a thriving digital economy. Hydropower projects and improved transportation could transform the nation's connectivity, while tourism may thrive with eco-friendly initiatives. The digital economy, driven by IT startups, could also see significant growth, and new infrastructure to alleviate Thoranko's traffic burden will be key to sustaining this growth, as Nepal's government has faced challenges that could affect future socio-economic development. Additionally, Nepal's strategic location between India and China positions it as a key player in the region, and it may continue to benefit from development partnerships with both countries. Remittances from overseas workers will likely remain a central part of the economy, though it poses challenges for sustainable economic transformation.",
       timestamp: "2 hours ago",
-      type: "text" as PostType,
+      file_type: "text" as PostType,
       likes: 112,
     },
     {
@@ -33,7 +33,7 @@ const HomePage = () => {
       content: "",
       timestamp: "2 hours ago",
       imageUrl: "/lovable-uploads/183c2abd-abad-444f-8df8-954de4ce94e9.png",
-      type: "image" as PostType,
+      file_type: "image" as PostType,
       likes: 89,
     },
     {
@@ -46,7 +46,7 @@ const HomePage = () => {
         "A comprehensive analysis of Nepal's economic future and global standing.",
       timestamp: "2 hours ago",
       imageUrl: "/lovable-uploads/55734868-5a2b-497b-b73e-55a5db80d233.png",
-      type: "image" as PostType,
+      file_type: "image" as PostType,
       likes: 74,
     },
     {
@@ -59,7 +59,7 @@ const HomePage = () => {
         "A comprehensive analysis of Nepal's economic future and global standing.",
       timestamp: "2 hours ago",
       imageUrl: "/lovable-uploads/55734868-5a2b-497b-b73e-55a5db80d233.png",
-      type: "image" as PostType,
+      file_type: "image" as PostType,
       likes: 74,
     },
   ]);
