@@ -23,7 +23,7 @@ async function create_user_profile() {
     const name = "Sikri Harayo";
     const bio = "Tiktoker Sikri Harayo";
     const creatorTokenName = "SIKRI_HARAYO";
-    const initialAmount = 1_000_000; // Initial supply of creator tokens
+    const initialAmount = 10; // Initial supply of creator tokens
     const packageId = 0x7569d195022a7b650eb2f633abf50f0f9b3ee1c56d5267d5cb6be2fe1df1bc93
 
     // Create a transaction to call create_user_profile

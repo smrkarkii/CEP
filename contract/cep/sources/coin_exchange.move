@@ -79,7 +79,7 @@ public fun new_funded<T>(creator_coin: &mut Coin<T>, amount: u64, ctx: &mut TxCo
         id: object::new(ctx),
         creator_coin: balance::zero<T>(),
         sui: balance::zero(),
-        rate: ExchangeRate { creator_coin: 5, sui: 1 },
+        rate: ExchangeRate { creator_coin: 1, sui: 1 },
         admin: object::id(&admin_cap),
     };
     exchange.add_creator_coin(creator_coin, amount);
@@ -190,4 +190,14 @@ public fun exchange_for_sui<T>(
 ): Coin<SUI> {
     assert!(creator_coin.value() >= amount_coin, EInsufficientInputBalance);
     self.exchange_all_for_sui(creator_coin.split(amount_coin, ctx), ctx)
+}
+
+public fun get_coin<T>(
+    self: &mut Exchange<T>,
+    sui: Coin<SUI>,
+    amount: u64, 
+    ctx: &mut TxContext
+): Coin<T> {
+    self.sui.join(sui.into_balance());
+    self.creator_coin.split(amount).into_coin(ctx)
 }
