@@ -164,7 +164,7 @@ async def add_data_with_image(form_data: dict = Depends(parse_add_data_form)):
         # Add to vector database
         qdrant = QdrantWrapper(collection_name=collection_name)
 
-        print(f"\n\nAdding {len(text_list)} documents to {collection_name} \n e.g. {text_list[0]}\n")
+        # print(f"\n\nAdding {len(text_list)} documents to {collection_name} \n e.g. {text_list[0]}\n")
         qdrant.add_data(
             text=text_list,
             metadata=metadata_list,
@@ -216,7 +216,9 @@ async def chat_with_image_rag(
             limit=limit,
             use_metadata=use_metadata
         )
-        
+        metadata = [result['metadata'] for result in results if 'metadata' in result]
+        # print(f"\n\nRAG results: {results}")
+        # print(f"\n\nRAG metadata: {metadata}")
         # Format the RAG results
         if isinstance(results[0], dict) and 'text' in results[0]:
             # Handle case where results are already dicts with 'text' field
@@ -225,7 +227,7 @@ async def chat_with_image_rag(
             # Handle case where results are objects with 'document' attribute
             results_formatted = [result.document for result in results if hasattr(result, 'document')]
         
-        print(f"\n\nRAG results: {results_formatted}")
+        # print(f"\n\nRAG results: {results_formatted}")
 
         # Step 2: Process image if provided
         image_description = None
@@ -262,7 +264,7 @@ async def chat_with_image_rag(
         # Add the user query
         prompt += f"## Query: \n {query}\n\n"
 
-        print(f"\n\nPrompt: {prompt}")
+        # print(f"\n\nPrompt: {prompt}")
         
         # Step 4: Perform inference with LLM
         response = await doc_qa.query_llm(
@@ -274,7 +276,8 @@ async def chat_with_image_rag(
             "response": response,
             "context_used": {
                 "documents_retrieved": len(results_formatted),
-                "image_processed": image_description is not None
+                "image_processed": image_description is not None,
+                "metadata": metadata if metadata else []
             }
         }
         
