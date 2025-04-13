@@ -1,14 +1,13 @@
-export type PostType = "text" | "image";
-
 export interface Post {
   id: string;
   author: string;
   authorId: string;
-  wallet?: string;
+  wallet: string;
   title: string;
   content: string;
   timestamp: string;
-  file_type: PostType;
+  file_type: string;
   likes: number;
-  imageUrl?: string;
+  blob_id: string;
+  comments?: number;
 }
