@@ -16,6 +16,7 @@ import CreateProfile from "@/components/Profile/CreateProfile";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { getBalance } from "@/services/commonServices";
 import CopyButton from "@/components/CopyButton";
+import LogoImg from "../assets/image.png";
 
 const Navbar = () => {
   // const { toggleChat } = useContext(ChatContext);
@@ -53,8 +54,8 @@ const Navbar = () => {
       <div className="flex items-center justify-between px-4 py-3 md:px-6">
         <div className="flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-tr from-primary to-purple-500 rounded-lg flex items-center justify-center text-white font-bold">
-              CEP
+            <div className="w-8 h-8 bg-gradient-to-tr from-primary to-purple-500 rounded-lg flex items-center justify-center text-white font-bold">
+              <img src={LogoImg} alt="logo" />
             </div>
             <span className="hidden text-xl font-semibold md:inline">
               ChainFluence
