@@ -81,8 +81,8 @@ class QdrantWrapper:
         
         if not add_metadata:
             self.client.add(
-                collection_name=self.collection_name,
-                documents=text,
+                collection_name=self.collection_name
+                # documents=text,
             )
         else:
             if metadata is None:
