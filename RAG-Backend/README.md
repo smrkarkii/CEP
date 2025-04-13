@@ -29,6 +29,11 @@ Once the server is running, navigate to:
 
 to explore the interactive Swagger UI documentation.
 
+
+#### values we are using 
+metadata: {"source":"blogpost"}
+collection_name=string
+add_metadata: true
 ---
 
 ## Potentially-Ambiguous API parameters
