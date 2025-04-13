@@ -11,24 +11,25 @@ dotenv.config();
 // This should be the object ID of your shared ContentRegistry object from the blockchain
 const CONTENT_REGISTRY_ID = "0xab71f73619a3bb971cdf56779e4f90a911f5928c6bd8f65891c349d77eb47911"; 
 // This should be the object ID of your existing coin that has enough balance
-const COIN_OBJECT_ID = "0x4c0977bfec6c43ed337cb7a7c7a9aa10f9a2a07f8b484e6b53e3ff55879eab76"; 
+const COIN_OBJECT_ID = "0xf9f7f79f7f3de8ddee5ae127869b49fc5d032771cc4246dbd6c278f22d44f1c3"; 
 // This should be the fully qualified type path for your token
-const COIN_TYPE ="0x2::coin::Coin<0x2bf060079a1b5b53e6e3ff91a630fd4e33c04382a11de8cfbbcbca4099f2f31e::sikri_harayo::SIKRI_HARAYO>"; // Replace with your actual coin type
+const COIN_TYPE ="0xd34bc0997df3fc5b0face67a2b146c3e42fb95926a7819b12b6fb84cc210d6ce::beast::BEAST"; // Replace with your actual coin type
+
 
 async function create_user_profile() {
     const { keypair, client } = getExecStuff();
     const tx = new TransactionBlock();
 
     // Parameters for create_user_profile function
-    const name = "Sikri Harayo";
-    const bio = "Tiktoker Sikri Harayo";
-    const creatorTokenName = "SIKRI_HARAYO";
-    const initialAmount = 1_000_000; // Initial supply of creator tokens
-    const packageId = 0x7569d195022a7b650eb2f633abf50f0f9b3ee1c56d5267d5cb6be2fe1df1bc93
+    const name = "Smriti Karki";
+    const bio = "Content creator passionate about blockchain technology";
+    const creatorTokenName = "BEAST";
+    const initialAmount = 1000000; // Initial supply of creator tokens
+    const packageId = 0xa1d97168a230d9bc36e4fc0c629bc5e9d91f921a31122da887e72c25aa1609d6
 
     // Create a transaction to call create_user_profile
     tx.moveCall({
-        target: `0x7569d195022a7b650eb2f633abf50f0f9b3ee1c56d5267d5cb6be2fe1df1bc93::contenteconomy::create_user_profile`,
+        target: `0xa1d97168a230d9bc36e4fc0c629bc5e9d91f921a31122da887e72c25aa1609d6::contenteconomy::create_user_profile`,
         typeArguments: [COIN_TYPE], // The token type
         // typeArguments: ["0x2::sui::SUI"],
         arguments: [

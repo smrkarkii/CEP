@@ -33,7 +33,8 @@ module cep::contenteconomy;
         token_holders:Table<address, Table<String, u64>>,//track ueers to theri token balances
         user_content:Table<address, vector<ID>>,//all content of a iser
         exchanges: Table<String, ID>,
-        creators_list:vector<ID>//list of userprofile id
+        creators_list:vector<ID>,//list of userprofile id
+        is_creator:Table<address, bool>
     }
 
     public struct Content has key, store {
@@ -64,7 +65,8 @@ module cep::contenteconomy;
             token_holders:table::new(ctx),
             exchanges:table::new(ctx),
             user_content: table::new(ctx),
-            creators_list:vector::empty()
+            creators_list:vector::empty(),
+            is_creator:table::new(ctx)
         };
 
         transfer::share_object(content_registry);
@@ -99,6 +101,7 @@ module cep::contenteconomy;
         // Register the exchange in the content registry
         table::add(&mut content_registry.exchanges, creator_token_name, exchange_id);
         content_registry.creators_list.push_back(object::id(&user_profile));
+        content_registry.is_creator.add(ctx.sender(), true);
         transfer::transfer(user_profile, ctx.sender());
     }
 
@@ -223,6 +226,14 @@ vector::push_back(vec, id);
     public fun get_all_content_creators_user_profile(content_registry:& ContentRegistry):vector<ID> {
           content_registry.creators_list
     }
+    public fun get_is_creator(content_registry:& ContentRegistry, user:address):bool{
+          content_registry.is_creator.contains(user)
+    }
+
+    public fun get_all_creators(content_registry:&ContentRegistry): vector<ID> {
+        content_registry.creators_list
+    }
+    
 
     
 
