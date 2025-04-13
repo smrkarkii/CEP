@@ -15,6 +15,7 @@ import { Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import CreateProfile from "@/components/Profile/CreateProfile";
+import { getIsCreator } from "@/services/profileServices";
 
 const HomePage = () => {
   const { isLoggedIn, userDetails } = useLogin();
@@ -76,6 +77,18 @@ const HomePage = () => {
     fetchContentObjects();
   }, [userContentIds]);
 
+  useEffect(() => {
+    const creatorStatus = async () => {
+      const creator = await getIsCreator(userDetails.address);
+      console.log("creator", creator);
+      if (creator === 1) {
+        setIsRegistered(true);
+      } else {
+        setIsRegistered(false);
+      }
+    };
+    creatorStatus();
+  }, [userDetails]);
   {
     isLoading && (
       <>

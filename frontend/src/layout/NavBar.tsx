@@ -57,7 +57,7 @@ const Navbar = () => {
               CEP
             </div>
             <span className="hidden text-xl font-semibold md:inline">
-              Creator Economy Platform
+              cre8space
             </span>
           </Link>
         </div>

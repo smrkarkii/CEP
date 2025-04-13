@@ -5,10 +5,8 @@ const PACKAGE_ID = import.meta.env.VITE_APP_PACKAGE_ID as string;
 const FULLNODE_URL = import.meta.env.VITE_APP_FULLNODE_URL as string;
 const NETWORK = import.meta.env.VITE_APP_NETWORK as "testnet";
 const CONTENT_REGISTRY = import.meta.env.VITE_APP_CONTENT_REGISTRY as string;
-const COIN_OBJECT_ID =
-  "0xfffc611f1f5d38441ec7035df1415b6cf16ef4627c34f04ca4cfa62c4daf1f30";
-const COIN_TYPE =
-  "0x2c6e03dbece192364ce5aa0ca4ef998b14bc2ffa743d8ea948bf1ef1bb34ef63::beast::BEAST";
+const COIN_OBJECT_ID = import.meta.env.VITE_APP_BEAST_OBJECT_ID as string;
+const COIN_TYPE = import.meta.env.VITE_APP_BEAST_COIN_TYPE as string;
 
 export const CreateUserProfile = async (
   name: string,
@@ -18,37 +16,63 @@ export const CreateUserProfile = async (
   const suiClient = new SuiClient({ url: FULLNODE_URL });
   const keypair = await flow.getKeypair({ network: NETWORK });
   const tx = new TransactionBlock();
+  const signer = await keypair.getPublicKey().toSuiAddress();
+
+  console.log("Transaction sender:", signer);
+  console.log("Content registry:", CONTENT_REGISTRY);
 
   const creatorTokenName = "BEAST";
   const initialAmount = 1000000;
 
-  // Create a transaction to call create_user_profile
+  // Fetch coins of the specific type owned by the user
+  const coins = await suiClient.getCoins({
+    owner: signer,
+    coinType: COIN_TYPE,
+  });
+
+  console.log(`Available ${COIN_TYPE} coins:`, coins.data);
+
+  if (coins.data.length === 0) {
+    throw new Error(
+      `No coins of type ${COIN_TYPE} found for address ${signer}`
+    );
+  }
+
+  // Use the coin with the highest balance
+  const coinToUse = coins.data.reduce(
+    (max, current) =>
+      BigInt(current.balance) > BigInt(max.balance) ? current : max,
+    coins.data[0]
+  );
+
+  console.log("Using coin:", coinToUse);
+
+  if (BigInt(coinToUse.balance) < BigInt(initialAmount)) {
+    throw new Error(
+      `Insufficient balance. Required: ${initialAmount}, Available: ${coinToUse.balance}`
+    );
+  }
+
   tx.moveCall({
     target: `${PACKAGE_ID}::contenteconomy::create_user_profile`,
-    typeArguments: [COIN_TYPE], // The token type
-    // typeArguments: ["0x2::sui::SUI"],
+    typeArguments: [COIN_TYPE],
     arguments: [
       tx.pure.string(name), // name
       tx.pure.string(bio), // bio
-      tx.object(CONTENT_REGISTRY), // content_registry (as string ID)
+      tx.object(CONTENT_REGISTRY), // content_registry
       tx.pure.string(creatorTokenName), // creator_token_name
-      tx.object(COIN_OBJECT_ID), // creator_coin - using a split coin
+      tx.object(coinToUse.coinObjectId), // Pass the coin object directly
       tx.pure.u64(initialAmount), // initial_amount
     ],
   });
 
-  const signer = await keypair.getPublicKey().toSuiAddress();
-  console.log(`Transaction sender: ${signer}`);
-
   try {
-    // Execute the transaction
     const result = await suiClient.signAndExecuteTransactionBlock({
       transactionBlock: tx,
       signer: keypair,
       options: {
         showEffects: true,
         showEvents: true,
-        showInput: true,
       },
     });
 
@@ -68,18 +92,43 @@ export const CreateUserProfile = async (
     if (result.events && result.events.length > 0) {
       console.log("Events:");
       result.events.forEach((event, i) => {
-        console.log(`Event ${i}: ${inspect(event, false, null, true)}`);
+        console.log(`Event ${i}:`, event);
       });
     }
+
+    return result;
   } catch (error) {
     console.error("Transaction failed:", error);
-    // Add more detailed error information
-    if (error.message) {
-      console.error("Error message:", error.message);
+    throw error;
+  }
+};
+
+export const getIsCreator = async (userAddress: string) => {
+  try {
+    const tx = new TransactionBlock();
+    const rpcUrl = import.meta.env.VITE_APP_FULLNODE_URL;
+    const suiClient = new SuiClient({ url: rpcUrl });
+
+    tx.moveCall({
+      target: `${PACKAGE_ID}::contenteconomy::get_is_creator`,
+      arguments: [tx.object(CONTENT_REGISTRY), tx.pure.address(userAddress)],
+    });
+
+    const response = await suiClient.devInspectTransactionBlock({
+      transactionBlock: tx,
+      sender: userAddress,
+    });
+
+    // console.log("Raw Response:", response);
+
+    if (!response.results?.[0]?.returnValues?.[0]) {
+      throw new Error("No return value found");
     }
-    // If there are nested errors, try to log those too
-    if (error.data) {
-      console.error("Error data:", error.data);
-    }
+
+    const creatorStatus = response.results[0].returnValues[0][0][0];
+
+    return creatorStatus;
+  } catch (err) {
+    console.log(err);
   }
 };
