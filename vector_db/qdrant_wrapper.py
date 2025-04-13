@@ -98,11 +98,11 @@ class QdrantWrapper:
             print(f"\n\nSplitted text :{texts} \n metadata : {metadatas} \n collection_name :{self.collection_name}\n")
             # Add document with metadata
             # Using client.add which handles embedding internally
-            # result = self.client.add(
-            #     collection_name=self.collection_name,
-            #     documents=texts,
-            #     metadata=metadatas
-            # )
+            result = self.client.add(
+                collection_name=self.collection_name,
+                documents=texts,
+                metadata=metadatas
+            )
             
             return result
     
