@@ -153,9 +153,9 @@ const HomePage = () => {
 
         {isLoggedIn && (
           <div className="lg:col-span-4 space-y-6">
-            <div className="sticky top-24">
-              <Leaderboard />
-              <div className="mt-6">
+            <div className="sticky">
+              {/* <Leaderboard /> */}
+              <div className="">
                 <AskQuestions />
               </div>
             </div>

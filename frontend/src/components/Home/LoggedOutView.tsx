@@ -24,7 +24,7 @@ const LoggedOutView = () => {
             <div className="space-y-8 text-center lg:text-left">
               <div className="space-y-4">
                 <h1 className="text-4xl lg:text-6xl font-bold text-foreground">
-                  cre8Space
+                  ChainFluence
                 </h1>
                 <p className="text-xl lg:text-2xl text-muted-foreground font-light">
                   Where creator meets freedom

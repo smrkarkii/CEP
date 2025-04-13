@@ -142,7 +142,7 @@ const UploadPanel = () => {
   return (
     <Card>
       <CardContent className="p-4">
-        <form onSubmit={handleUploadClick}>
+        <form onSubmit={handleUploadClick} className="space-y-2">
           <div className="flex items-center gap-3 mb-4">
             <Upload />
             <p className="font-medium">Upload Content</p>
@@ -152,7 +152,7 @@ const UploadPanel = () => {
             <span className="text-base font-semibold md:text-lg">Title</span>
             <input
               placeholder="Title..."
-              className="h-14 w-[600px] rounded-lg border"
+              className="h-12 w-[600px] rounded-lg border"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
@@ -245,13 +245,16 @@ const UploadPanel = () => {
               Post
             </Button>
           </div> */}
-          <Button
-            type="submit"
-            className="mt-4"
-            disabled={isUploading || !title.trim() || !body.trim() || !file}
-          >
-            {isUploading ? "Uploading..." : "Post"}
-          </Button>
+          <div className="flex justify-between items-center">
+            <Button
+              type="submit"
+              className="mt-4"
+              disabled={isUploading || !title.trim() || !body.trim() || !file}
+            >
+              {isUploading ? "Uploading..." : "Post"}
+            </Button>
+            <Button onClick={handleAddSui}>Add Sui</Button>
+          </div>
         </form>
 
         {errorMessage && (
@@ -261,10 +264,6 @@ const UploadPanel = () => {
         {isSuccess && (
           <p className="mt-2 text-sm text-green-500">Upload successful!</p>
         )}
-        {/* <div className="mt-3">
-          {" "}
-          <Button onClick={handleAddSui}>Add Sui</Button>
-        </div> */}
       </CardContent>
     </Card>
   );
