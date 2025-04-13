@@ -79,7 +79,7 @@ Cre8Space is a decentralized platform where:
 - **Frontend**: React JS  
 - **Backend**: Node.js, Express  
 - **Storage**: Walrus 
-  **AI**: Vector DB, Atoma API, Python, OpenAI API 
+  **AI**: Vector_Db: Qdrant, LLM: Atoma API and OpenAI API 
 
 ---
 
@@ -115,6 +115,7 @@ cd server && pnpm start
 
 ### 📦 RAG Backend
 - Upload and store **image + text data** to a vector database.
+  - How to store image in vector: first 
 - Enable **chat functionality** powered by a RAG system using both images and text.
 
 ### 💬 Social Interaction Backend (`the-backend`)
