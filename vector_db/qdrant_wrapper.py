@@ -28,6 +28,9 @@ class QdrantWrapper:
             url=os.getenv("QDRANT_URL"), 
             api_key=os.getenv("QDRANT_API_KEY"),
         )
+
+        self.chunk_size = int(os.getenv("CHUNK_SIZE", 10000))
+        self.overlap = int(os.getenv("OVERLAP", 10000))
         
         self.collection_name = collection_name
         self.vector_size = vector_size
@@ -42,7 +45,24 @@ class QdrantWrapper:
         #             distance=distance
         #         ),
         #     )
-    
+    # both text and metadata are lists of same length
+
+    def split_long_text(self, texts, metadatas):
+        texts_new = []
+        metadatas_new = []
+        for text, metadata in zip(texts, metadatas):
+            if len(text) > self.chunk_size:
+                start = 0
+                while start < len(text):
+                    end = start + self.chunk_size
+                    texts_new.append(text[start:end])
+                    metadatas_new.append(metadata)
+                    start += self.chunk_size - self.overlap
+            else:
+                texts_new.append(text)
+                metadatas_new.append(metadata)
+        return texts_new, metadatas_new
+
     def add_data(self, text: Union[str, List[str]], metadata: Optional[Union[Dict, List[Dict]]] = None, add_metadata=False) -> List:
         """
         Add text data to the Qdrant collection with optional metadata.
@@ -72,14 +92,17 @@ class QdrantWrapper:
                 
             if len(text) != len(metadata):
                 raise ValueError("Number of text items must match number of metadata items")
-                
+            print(f"\n\nAdding text :{text} \n metadata : {metadata} \n collection_name :{self.collection_name}\n")
+            
+            texts, metadatas = self.split_long_text(text, metadata)
+            print(f"\n\nSplitted text :{texts} \n metadata : {metadatas} \n collection_name :{self.collection_name}\n")
             # Add document with metadata
             # Using client.add which handles embedding internally
-            result = self.client.add(
-                collection_name=self.collection_name,
-                documents=text,
-                metadata=metadata
-            )
+            # result = self.client.add(
+            #     collection_name=self.collection_name,
+            #     documents=texts,
+            #     metadata=metadatas
+            # )
             
             return result
     
