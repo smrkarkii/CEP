@@ -199,6 +199,7 @@ async def chat_with_image_rag(
     4. Performs inference with an LLM
     """
     try:
+        print(f"\n\nGot response: query:{query}\n collection_name:{collection_name}\n metadata_filter:{metadata_filter}\n limit:{limit}\n use_metadata:{use_metadata}\n model_name:{model_name}\n file:{file}")
         # Parse metadata_filter from string to dict if provided
         metadata_filter_dict = None
         if metadata_filter:
