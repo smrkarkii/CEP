@@ -2,8 +2,6 @@
 ### The Decentralized Creator Economy Platform  
 **Where creators monetize fairly and fans invest in success**  
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live%20Preview-brightgreen)](https://demo.cre8space.xyz)  
-[![Blockchain](https://img.shields.io/badge/Powered%20by-SUI%20Blockchain-blue)](https://sui.io)  
 
 ---
 
