@@ -105,3 +105,39 @@ pnpm dev
 
 # Backend (Node.js - if separate)
 cd server && pnpm start
+
+* Run rag-backend: [instructions](https://github.com/smrkarkii/CEP/tree/rag-backend) for add data and chat with RAAG system
+* Run the-backend : [instructions-here](https://github.com/smrkarkii/CEP/tree/the-backend) for likes, comments, follow
+
+---
+
+## 🔍 Features
+
+### 📦 RAG Backend
+- Upload and store **image + text data** to a vector database.
+- Enable **chat functionality** powered by a RAG system using both images and text.
+
+### 💬 Social Interaction Backend (`the-backend`)
+- Manage core social features:
+  - Likes
+  - Comments
+  - Follow/Unfollow functionality
+
+### 📦 Blockchain Backend
+- Manage core social features:
+  - Likes
+  - Comments
+  - Follow/Unfollow functionality
+
+---
+
+## 👥 Team Members & Roles
+
+| Name                  | Role                   |
+|-----------------------|------------------------|
+| Smriti Karki          | Blockchain Developer   |
+| Ayushma Kafle         | Front-End Developer    |
+| Naresh Khatiwada      | Front-End Developer    |
+| Aananda Prasad Giri   | AI Developer           |
+
+---
