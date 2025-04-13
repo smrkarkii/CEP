@@ -6,32 +6,56 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useLogin } from "@/context/UserContext";
+import { toast } from "sonner";
+import { useEnokiFlow } from "@mysten/enoki/react";
+import { CreateUserProfile } from "@/services/profileServices";
 
 const CreateProfile = () => {
-  const { userDetails } = useLogin();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [formData, setState] = useState({
+  const [formData, setFormData] = useState({
     name: "",
     bio: "",
   });
+
+  const { userDetails } = useLogin();
+  const flow = useEnokiFlow();
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setState((prev) => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const profileData = {
-      ...formData,
-      address: userDetails.address,
-    };
-    console.log("Profile data:", profileData);
+    setIsSubmitting(true);
+
+    try {
+      const profileData = {
+        ...formData,
+        address: userDetails.address,
+      };
+      console.log("Profile data:", profileData);
+
+      await CreateUserProfile(formData.name, formData.bio, flow);
+
+      toast.success("Profile Created", {
+        description:
+          "Your profile has been successfully created on the blockchain!",
+      });
+    } catch (error) {
+      console.error("Failed to create profile:", error);
+      toast.error("Error", {
+        description: "Failed to create your profile. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -54,6 +78,7 @@ const CreateProfile = () => {
             onChange={handleChange}
             placeholder="Name"
             className="w-full p-2 border rounded focus:outline-none focus:ring-1 focus:ring-primary"
+            required
           />
         </div>
 
@@ -64,11 +89,12 @@ const CreateProfile = () => {
             onChange={handleChange}
             placeholder="Bio"
             className="w-full p-2 border rounded min-h-24 focus:outline-none focus:ring-1 focus:ring-primary"
+            required
           />
         </div>
 
-        <Button type="submit" className="w-full">
-          Create Profile
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Creating Profile..." : "Create Profile"}
         </Button>
       </form>
     </>
