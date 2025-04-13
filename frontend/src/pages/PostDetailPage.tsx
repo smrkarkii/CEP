@@ -1,242 +1,278 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
-import { ChevronLeft, Heart, MessageSquare, Share2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import Leaderboard from "@/components/Leaderboard";
-import AskQuestions from "@/components/AskQuestions";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft, Heart, MessageSquare, ExternalLink } from "lucide-react";
+import CopyButton from "@/components/CopyButton";
+import { getContentObject } from "@/services/contentServices";
+import { SuiObjectData } from "@mysten/sui.js/client";
+import { Post } from "@/types/post";
+import TextContentViewer from "@/components/Content/TextContentViewer";
+import ImageContentViewer from "@/components/Content/ImageContentViewer";
 
-const PostDetailPage = () => {
-  const { id } = useParams();
+const PostDetailsPage = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [comment, setComment] = useState("");
+  const [post, setPost] = useState<Post | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [liked, setLiked] = useState(false);
-  const commentsRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+  const mapSuiObjectToPost = (suiObject: SuiObjectData): Post => {
+    const fields = suiObject.content?.fields as any;
 
-  // Check if we need to scroll to comments section
-  useEffect(() => {
-    if (location.hash === "#comments" && commentsRef.current) {
-      setTimeout(() => {
-        commentsRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 100);
-    }
-  }, [location.hash]);
-
-  // In a real app, you'd fetch the post data based on the ID
-  // For now, we'll use dummy data
-  const post = {
-    id,
-    author: "591_68",
-    authorId: "112",
-    wallet: "0x1abc...",
-    title: "How will Nepal Be in 25 Years?",
-    content:
-      "In the next ten years, Nepal's economy could experience steady growth, particularly through infrastructure development, tourism, and a thriving digital economy. Hydropower projects and improved transportation could transform the nation's connectivity, while tourism may thrive with eco-friendly initiatives. The digital economy, driven by IT startups, could also see significant growth, and new infrastructure to alleviate Thoranko's traffic burden will be key to sustaining this growth, as Nepal's government has faced challenges that could affect future socio-economic development. Additionally, Nepal's strategic location between India and China positions it as a key player in the region, and it may continue to benefit from development partnerships with both countries. Remittances from overseas workers will likely remain a central part of the economy, though it poses challenges for sustainable economic transformation.",
-    timestamp: "2 hours ago",
-    imageUrl:
-      id === "2"
-        ? "/lovable-uploads/183c2abd-abad-444f-8df8-954de4ce94e9.png"
-        : id === "3"
-        ? "/lovable-uploads/55734868-5a2b-497b-b73e-55a5db80d233.png"
-        : undefined,
-    type: id === "2" || id === "3" ? "image" : "text",
-    likes: 112,
+    return {
+      id: suiObject.objectId || "",
+      author: fields?.owner || "Unknown Creator",
+      authorId: fields?.owner || "",
+      wallet: fields?.owner || "",
+      title: fields?.title || "Untitled",
+      content: fields?.description || "",
+      timestamp: new Date().toISOString(),
+      file_type: fields?.file_type?.includes("image") ? "image" : "text",
+      likes: 0,
+      blob_id: fields?.blob_id || "",
+    };
   };
 
-  // Dummy comments
-  const comments = [
-    {
-      id: "c1",
-      author: "user123",
-      authorId: "56",
-      content: "This is a really insightful analysis!",
-      timestamp: "1 hour ago",
-      likes: 8,
-    },
-    {
-      id: "c2",
-      author: "nepal_fan",
-      authorId: "78",
-      content: "I think tourism will be the biggest growth sector for Nepal.",
-      timestamp: "45 minutes ago",
-      likes: 5,
-    },
-  ];
+  useEffect(() => {
+    const fetchPostDetails = async () => {
+      if (!id) {
+        setError("Post ID is missing");
+        setIsLoading(false);
+        return;
+      }
 
-  const handleSubmitComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!comment.trim()) return;
-    // In a real app, you'd send this to your backend
-    console.log("Comment submitted:", comment);
-    setComment("");
-  };
+      try {
+        setIsLoading(true);
 
-  const scrollToComments = () => {
-    if (commentsRef.current) {
-      commentsRef.current.scrollIntoView({ behavior: "smooth" });
+        const contentObject = await getContentObject(id);
+        if (!contentObject) {
+          throw new Error("Content not found");
+        }
+
+        const postData = mapSuiObjectToPost(contentObject);
+        setPost(postData);
+      } catch (err) {
+        console.error("Error fetching post details:", err);
+        setError("Failed to load post. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPostDetails();
+  }, [id]);
+
+  const toggleLike = () => {
+    setLiked(!liked);
+    if (!liked && post) {
+      setPost({ ...post, likes: post.likes + 1 });
+    } else if (post) {
+      setPost({ ...post, likes: Math.max(0, post.likes - 1) });
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-65px)]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-t-primary border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-4 text-lg">Loading post...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-65px)]">
+        <div className="text-center">
+          <p className="text-red-500 text-lg">{error}</p>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => navigate(-1)}
+          >
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (!post) {
-    return <div>Post not found</div>;
+    return (
+      <div className="flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg">Post not found</p>
+          <Button variant="outline" onClick={() => navigate(-1)}>
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
+    <div className="container mx-auto px-4 py-6 max-w-4xl">
+      <div className="mb-6">
         <Button
           variant="ghost"
-          className="mb-4 -ml-2"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
           onClick={() => navigate(-1)}
         >
-          <ChevronLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
+      </div>
 
-        <Card>
-          <CardHeader className="p-4">
-            <Link
-              to={`/profile/${post.authorId}`}
-              className="flex items-center gap-3"
-            >
-              <Avatar>
-                <AvatarImage src="" />
-                <AvatarFallback>{post.author.slice(0, 2)}</AvatarFallback>
+      <Card className="overflow-hidden">
+        <CardContent className="p-6">
+          <div className="flex items-center mb-6">
+            <Link to={`/creator/${post.authorId}`}>
+              <Avatar className="h-10 w-10 mr-3">
+                <AvatarImage
+                  src={`https://source.unsplash.com/random/100x100/?portrait&u=${post.authorId}`}
+                  alt={`Creator ${post.authorId.slice(
+                    0,
+                    5
+                  )}...${post.authorId.slice(-4)}`}
+                />
+                <AvatarFallback>
+                  {post.authorId.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
-              <div>
-                <p className="font-medium">{post.author}</p>
-                <p className="text-xs text-gray-500">{post.timestamp}</p>
-              </div>
             </Link>
-          </CardHeader>
-
-          <CardContent className="p-4 pt-0">
-            <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
-
-            {post.imageUrl && (
-              <div className="mb-4">
-                <img
-                  src={post.imageUrl}
-                  alt={post.title}
-                  className="w-full rounded-md"
-                />
+            <div>
+              <Link
+                to={`/creator/${post.authorId}`}
+                className="font-medium hover:underline"
+              >
+                Creator {post.authorId.slice(0, 5)}...{post.authorId.slice(-4)}
+              </Link>
+              <div className="text-xs text-muted-foreground">
+                {new Date(post.timestamp).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
               </div>
-            )}
-
-            <div className="prose max-w-none">
-              <p className="whitespace-pre-line">{post.content}</p>
             </div>
-          </CardContent>
-
-          <CardFooter className="p-4 pt-0">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex items-center gap-1"
-                onClick={() => setLiked(!liked)}
-              >
-                <Heart
-                  className={`h-4 w-4 ${
-                    liked ? "fill-red-500 text-red-500" : ""
-                  }`}
-                />
-                <span>{post.likes + (liked ? 1 : 0)}</span>
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex items-center gap-1"
-                onClick={scrollToComments}
-              >
-                <MessageSquare className="h-4 w-4" />
-                <span>{comments.length}</span>
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex items-center gap-1"
-              >
-                <Share2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardFooter>
-        </Card>
-
-        <div ref={commentsRef} id="comments">
-          <h2 className="text-xl font-semibold">Comments</h2>
-
-          <Card className="p-4">
-            <form onSubmit={handleSubmitComment} className="space-y-4">
-              <Textarea
-                placeholder="Add a comment..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-              />
-              <div className="flex justify-end">
-                <Button type="submit" disabled={!comment.trim()}>
-                  Comment
-                </Button>
-              </div>
-            </form>
-          </Card>
-
-          <div className="space-y-4">
-            {comments.map((comment) => (
-              <Card key={comment.id}>
-                <CardHeader className="p-4 pb-1">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback>
-                        {comment.author.slice(0, 2)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{comment.author}</span>
-                    <span className="text-xs text-gray-500">
-                      {comment.timestamp}
-                    </span>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-1">
-                  <p>{comment.content}</p>
-                </CardContent>
-                <CardFooter className="p-4 pt-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-1"
-                  >
-                    <Heart className="h-3 w-3" />
-                    <span className="text-xs">{comment.likes}</span>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
           </div>
-        </div>
-      </div>
 
-      <div className="lg:col-span-1 space-y-6">
-        <Leaderboard />
-        <AskQuestions />
-      </div>
+          <h1 className="text-2xl font-bold mb-4">{post.title}</h1>
+
+          <div className="mb-6">
+            {post.file_type === "image" ? (
+              <ImageContentViewer blobId={post.blob_id} alt={post.title} />
+            ) : (
+              <TextContentViewer
+                blobId={post.blob_id}
+                fallbackContent={post.content}
+              />
+            )}
+          </div>
+
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div className="flex space-x-4">
+                <button
+                  onClick={toggleLike}
+                  className="flex items-center text-sm text-muted-foreground hover:text-foreground"
+                >
+                  <Heart
+                    className={`mr-1 h-5 w-5 ${
+                      liked ? "fill-red-500 text-red-500" : ""
+                    }`}
+                  />
+                  <span>{post.likes} Likes</span>
+                </button>
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <MessageSquare className="mr-1 h-5 w-5" />
+                  <span>0 Comments</span>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <a
+                  href={`https://suiscan.xyz/testnet/object/${post.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-3 py-1 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                >
+                  <ExternalLink className="mr-1 h-4 w-4" />
+                  View on SuiScan
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 p-4 bg-muted rounded-lg">
+            <h3 className="text-sm font-semibold mb-2">Blockchain Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="flex items-center">
+                <span className="text-xs text-muted-foreground mr-2">
+                  Object ID:
+                </span>
+                <Badge variant="outline" className="px-2 py-0 text-xs">
+                  {post.id.slice(0, 10)}...{post.id.slice(-4)}
+                  <CopyButton
+                    textToCopy={post.id}
+                    size={12}
+                    tooltipText="Copy object ID"
+                  />
+                </Badge>
+              </div>
+              <div className="flex items-center">
+                <span className="text-xs text-muted-foreground mr-2">
+                  Owner:
+                </span>
+                <Badge variant="outline" className="px-2 py-0 text-xs">
+                  {post.wallet.slice(0, 10)}...{post.wallet.slice(-4)}
+                  <CopyButton
+                    textToCopy={post.wallet}
+                    size={12}
+                    tooltipText="Copy wallet address"
+                  />
+                </Badge>
+              </div>
+              <div className="flex items-center">
+                <span className="text-xs text-muted-foreground mr-2">
+                  BlobId:
+                </span>
+                <Badge
+                  variant="outline"
+                  className="px-2 py-0 text-xs truncate max-w-xs"
+                >
+                  {post.blob_id.length > 20
+                    ? `${post.blob_id.slice(0, 10)}...${post.blob_id.slice(
+                        -10
+                      )}`
+                    : post.blob_id}
+                  <CopyButton
+                    textToCopy={post.blob_id}
+                    size={12}
+                    tooltipText="Copy blob ID"
+                  />
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardContent className="p-6">
+          <h2 className="text-xl font-semibold mb-4">Comments</h2>
+          <div className="text-center py-6 text-muted-foreground">
+            Comments functionality coming soon
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-export default PostDetailPage;
+export default PostDetailsPage;

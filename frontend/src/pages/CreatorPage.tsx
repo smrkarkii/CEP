@@ -32,12 +32,10 @@ const mapSuiObjectToPost = (suiObject: SuiObjectData): Post => {
     wallet: fields?.owner || "",
     title: fields?.title || "Untitled",
     content: fields?.description || "",
+    blob_id: fields?.blob_id ?? "",
     timestamp: new Date().toISOString(),
     file_type: fields?.file_type?.includes("image") ? "image" : "text",
     likes: 0,
-    imageUrl: fields?.file_type?.includes("image")
-      ? `https://ipfs.io/ipfs/${fields?.blob_id}`
-      : undefined,
   };
 };
 
@@ -73,7 +71,7 @@ const CreatorPage = () => {
         setCreator(creatorProfile);
 
         const contentIds = await getAllContentsByUser(id);
-
+        console.log("objectids", contentIds);
         if (contentIds && contentIds.length > 0) {
           const contentObjects = await getContentObjects(contentIds);
 
@@ -194,7 +192,7 @@ const CreatorPage = () => {
 
       <div className="mt-6 py-6 border-t">
         {posts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {posts.map((post) => (
               <Link to={`/post/${post.id}`} key={post.id}>
                 <ContentCard post={post} />
