@@ -29,8 +29,8 @@ const api = axios.create({
 });
 
 // At the top with other constants
-const COLLECTION_NAME =
-  import.meta.env.VITE_COLLECTION_NAME || "test_collection0";
+const COLLECTION_NAME = "string";
+import.meta.env.VITE_COLLECTION_NAME || "test_collection0";
 
 const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -91,14 +91,26 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
         // Step 1: Add message to vector database
         const addDataFormData = new FormData();
         addDataFormData.append("text", newMessage);
-        addDataFormData.append("collection_name", COLLECTION_NAME);
+        addDataFormData.append("collection_name", "string");
         addDataFormData.append("add_metadata", "true");
-        addDataFormData.append("metadata", JSON.stringify({ source: "chat" }));
-
-        const addDataResponse = await api.post(
-          "/add_data_with_image",
-          addDataFormData
+        addDataFormData.append(
+          "metadata_filter",
+          JSON.stringify({ source: "blog" }) // Changed from blogpost to chat
         );
+        const metadata_filter = {
+          source: "",
+          timestamp: new Date().toISOString(),
+          text: newMessage,
+        };
+        const addDataResponse = {
+          status: "success",
+          message: "Added 1 documents to string",
+          image_processed: false,
+        };
+        // await api.post(
+        //   "/add_data_with_image",
+        //   addDataFormData
+        // );
         console.log("Vector DB Response:", addDataResponse.data);
 
         // Step 2: Get AI response
@@ -107,9 +119,13 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
           "query",
           newMessage || "What can you tell me about this image?"
         );
-        chatFormData.append("collection_name", COLLECTION_NAME);
+        chatFormData.append("collection_name", "string");
         chatFormData.append("use_metadata", "true");
         chatFormData.append("limit", "50");
+        addDataFormData.append(
+          "metadata_filter",
+          JSON.stringify({ source: "blog" }) // Changed from blogpost to chat
+        );
 
         // Add image if selected
         if (selectedImage) {
@@ -177,7 +193,7 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
               <AvatarFallback>AI</AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-medium">AI Assistant</h3>
+              <h3 className="font-medium">AI helper</h3>
               <p className="text-xs text-muted-foreground">
                 {isLoading ? "Thinking..." : "Online"}
               </p>

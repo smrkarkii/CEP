@@ -46,16 +46,21 @@ const AiChat: React.FC = () => {
           metadata: { source: "chat" },
         });
 
-        const addDataResponse = await axios.post(
-          `${API_URL}/add_data_with_image`,
-          addDataFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Accept: "application/json",
-            },
-          }
-        );
+        const addDataResponse = {
+          status: "success",
+          message: "Added 1 documents to string",
+          image_processed: false,
+        };
+        // await axios.post(
+        //   `${API_URL}/add_data_with_image`,
+        //   addDataFormData,
+        //   {
+        //     headers: {
+        //       "Content-Type": "multipart/form-data",
+        //       Accept: "application/json",
+        //     },
+        //   }
+        // );
 
         console.log("Vector DB Response:", addDataResponse.data);
 
@@ -67,13 +72,13 @@ const AiChat: React.FC = () => {
           "metadata_filter",
           JSON.stringify({ source: "chat" })
         );
-        chatFormData.append("limit", "50");
+        chatFormData.append("limit", "1");
         chatFormData.append("use_metadata", "true");
 
         console.log("Sending to /chat_with_image_rag:", {
           query: input,
           collection_name: "test_collection",
-          metadata_filter: { source: "chat" },
+          metadata_filter: { source: "blog" },
         });
 
         const chatResponse = await axios.post(
