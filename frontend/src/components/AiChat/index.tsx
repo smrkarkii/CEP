@@ -2,31 +2,149 @@ import React, { useState } from "react";
 import UserResponse from "./UserResponse";
 import BotResponse from "./BotResponse";
 import { Send, X, MessageCircle } from "lucide-react";
+import axios from "axios";
 
 interface Message {
   sender: "user" | "bot";
   text: string;
 }
 
+// Since your API is running on 0.0.0.0:8000
+const API_URL = "http://localhost:8000";
+
 const AiChat: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendMessage = () => {
-    if (input.trim()) {
-      const newMessages: Message[] = [
-        ...messages,
-        { sender: "user", text: input },
-        {
+  console.log("Ai chat component rendered");
+
+  const handleSendMessage = async () => {
+    // Debug log to ensure function is called
+    console.log("handleSendMessage called with input:", input);
+
+    if (input.trim() && !isLoading) {
+      setIsLoading(true);
+      console.log("Starting API calls...");
+
+      // Add user message immediately
+      const userMessage: Message = { sender: "user", text: input };
+      setMessages((prev) => [...prev, userMessage]);
+
+      try {
+        // Step 1: Add the message to vector database
+        const addDataFormData = new FormData();
+        addDataFormData.append("text", input);
+        addDataFormData.append("collection_name", "test_collection");
+        addDataFormData.append("add_metadata", "true");
+        addDataFormData.append("metadata", JSON.stringify({ source: "chat" }));
+
+        console.log("Sending to /add_data_with_image:", {
+          text: input,
+          collection_name: "test_collection",
+          metadata: { source: "chat" },
+        });
+
+        const addDataResponse = await axios.post(
+          `${API_URL}/add_data_with_image`,
+          addDataFormData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Accept: "application/json",
+            },
+          }
+        );
+
+        console.log("Vector DB Response:", addDataResponse.data);
+
+        // Step 2: Get AI response using chat endpoint
+        const chatFormData = new FormData();
+        chatFormData.append("query", input);
+        chatFormData.append("collection_name", "test_collection");
+        chatFormData.append(
+          "metadata_filter",
+          JSON.stringify({ source: "chat" })
+        );
+        chatFormData.append("limit", "50");
+        chatFormData.append("use_metadata", "true");
+
+        console.log("Sending to /chat_with_image_rag:", {
+          query: input,
+          collection_name: "test_collection",
+          metadata_filter: { source: "chat" },
+        });
+
+        const chatResponse = await axios.post(
+          `${API_URL}/chat_with_image_rag`,
+          chatFormData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Accept: "application/json",
+            },
+          }
+        );
+
+        console.log("Chat Response:", chatResponse.data);
+
+        // Add bot response
+        const botResponse = chatResponse.data.response;
+        console.log("Bot will respond with:", botResponse);
+
+        const botMessage: Message = {
           sender: "bot",
-          text: "Thank you for the message, lemme get back to you in 2 mins.",
-        },
-      ];
-      setMessages(newMessages);
-      setInput("");
+          text:
+            botResponse || "I apologize, but I couldn't process your request.",
+        };
+        setMessages((prev) => [...prev, botMessage]);
+      } catch (error: any) {
+        // Detailed error logging
+        console.error("Error occurred:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          config: {
+            url: error.config?.url,
+            method: error.config?.method,
+            headers: error.config?.headers,
+          },
+        });
+
+        const errorMessage: Message = {
+          sender: "bot",
+          text: `Error: ${
+            error.response?.data?.detail ||
+            error.message ||
+            "Unknown error occurred"
+          }`,
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      } finally {
+        setIsLoading(false);
+        setInput("");
+        console.log("Request completed. Loading state reset.");
+      }
     }
   };
+
+  // Let's add a test function to verify the API connection
+  const testApiConnection = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/docs`);
+      console.log("API connection test successful:", response.status);
+    } catch (error) {
+      console.error("API connection test failed:", error);
+    }
+  };
+
+  // Call the test function when component mounts
+  React.useEffect(() => {
+    testApiConnection();
+    console.log("Component mounted, API URL:", API_URL);
+  }, []);
 
   return (
     <>
@@ -34,7 +152,10 @@ const AiChat: React.FC = () => {
       {!isOpen && (
         <button
           className="fixed top-0 right-5 z-50 bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-full shadow-lg"
-          onClick={() => setIsOpen(true)}
+          onClick={() => {
+            console.log("Opening chat window");
+            setIsOpen(true);
+          }}
         >
           <MessageCircle size={24} />
         </button>
@@ -48,7 +169,7 @@ const AiChat: React.FC = () => {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-[#2A2A3F] text-white font-semibold border-b border-gray-600">
-          <span>AI Assistant</span>
+          <span>AI Assistant {isLoading ? "(Loading...)" : ""}</span>
           <button
             onClick={() => setIsOpen(false)}
             className="text-gray-300 hover:text-white"
@@ -63,7 +184,11 @@ const AiChat: React.FC = () => {
             message.sender === "user" ? (
               <UserResponse key={index} text={message.text} />
             ) : (
-              <BotResponse key={index} text={message.text} />
+              <BotResponse
+                key={index}
+                text={message.text}
+                isLoading={isLoading && index === messages.length - 1}
+              />
             )
           )}
         </div>
@@ -75,12 +200,27 @@ const AiChat: React.FC = () => {
             type="text"
             placeholder="Type your message..."
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+            onChange={(e) => {
+              console.log("Input changed:", e.target.value);
+              setInput(e.target.value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                console.log("Enter key pressed");
+                handleSendMessage();
+              }
+            }}
+            disabled={isLoading}
           />
           <button
-            className="ml-2 p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-full"
-            onClick={handleSendMessage}
+            className={`ml-2 p-2 ${
+              isLoading ? "bg-purple-400" : "bg-purple-600 hover:bg-purple-700"
+            } text-white rounded-full`}
+            onClick={() => {
+              console.log("Send button clicked");
+              handleSendMessage();
+            }}
+            disabled={isLoading}
           >
             <Send size={20} strokeWidth={2} />
           </button>

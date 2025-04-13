@@ -1,14 +1,23 @@
 import React from "react";
 
-interface Props {
+interface BotResponseProps {
   text: string;
+  isLoading?: boolean;
 }
 
-const BotResponse: React.FC<Props> = ({ text }) => {
+const BotResponse: React.FC<BotResponseProps> = ({ text, isLoading }) => {
   return (
-    <div className="flex justify-start">
-      <div className="bg-gray-200 text-gray-800 px-4 py-2 rounded-2xl max-w-xs text-sm">
-        {text || "Thank you for the message, lemme get back to you in 2 mins."}
+    <div className="flex items-start space-x-2">
+      <div className="p-3 bg-[#2A2A3F] rounded-lg max-w-[80%]">
+        {isLoading ? (
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" />
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce delay-100" />
+            <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce delay-200" />
+          </div>
+        ) : (
+          text
+        )}
       </div>
     </div>
   );
