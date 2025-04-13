@@ -22,7 +22,7 @@ export const CreateUserProfile = async (
   console.log("Content registry:", CONTENT_REGISTRY);
 
   const creatorTokenName = "BEAST";
-  const initialAmount = 1000000;
+  const initialAmount = 10;
 
   // Fetch coins of the specific type owned by the user
   const coins = await suiClient.getCoins({
@@ -130,5 +130,59 @@ export const getIsCreator = async (userAddress: string) => {
     return creatorStatus;
   } catch (err) {
     console.log(err);
+  }
+};
+
+export const AddSui = async (flow: any) => {
+  const suiClient = new SuiClient({ url: FULLNODE_URL });
+  const keypair = await flow.getKeypair({ network: NETWORK });
+  const tx = new TransactionBlock();
+
+  const amountToAdd = 1000000000;
+
+  // Split some SUI from the gas payment for the transaction
+  const [payment] = tx.splitCoins(tx.gas, [tx.pure.u64(amountToAdd)]);
+  tx.moveCall({
+    target: `${PACKAGE_ID}::exchange::add_sui`,
+    typeArguments: [COIN_TYPE],
+    arguments: [
+      tx.object(
+        "0xd3288b60e5478fabb8d460efac5d0c077e5106d59183d8635f816dceabd0b911"
+      ), //exchange
+      payment, // sui coin
+      tx.pure.u64(amountToAdd),
+    ],
+  });
+  tx.transferObjects([payment], keypair.getPublicKey().toSuiAddress());
+  try {
+    const result = await suiClient.signAndExecuteTransactionBlock({
+      transactionBlock: tx,
+      signer: keypair,
+    });
+
+    console.log("Transaction successful!");
+    console.log(`Transaction digest: ${result.digest}`);
+    console.log(`Status: ${result.effects?.status}`);
+
+    // Display created objects
+    if (result.effects?.created) {
+      console.log("Created objects:");
+      result.effects.created.forEach((obj) => {
+        console.log(`- ${obj.reference.objectId} (${obj.owner})`);
+      });
+    }
+
+    // Display events
+    if (result.events && result.events.length > 0) {
+      console.log("Events:");
+      result.events.forEach((event, i) => {
+        console.log(`Event ${i}:`, event);
+      });
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Transaction failed:", error);
+    throw error;
   }
 };

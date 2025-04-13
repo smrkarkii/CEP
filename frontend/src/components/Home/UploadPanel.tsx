@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { UploadContent } from "@/services/UploadServices";
 import { useEnokiFlow } from "@mysten/enoki/react";
+import { AddSui } from "@/services/profileServices";
 
 const WALRUS_PUBLISHER_URL = import.meta.env.VITE_APP_WALRUS_PUBLISHER_URL;
 
@@ -95,6 +96,10 @@ const UploadPanel = () => {
   const handleRemoveFile = () => {
     setFile(null);
     setFileSizeError(false);
+  };
+
+  const handleAddSui = async () => {
+    await AddSui(flow);
   };
 
   const storeBlob = async (file: File, fileType: string) => {
@@ -248,6 +253,7 @@ const UploadPanel = () => {
             {isUploading ? "Uploading..." : "Post"}
           </Button>
         </form>
+
         {errorMessage && (
           <p className="mt-2 text-sm text-red-500">{errorMessage}</p>
         )}
@@ -255,6 +261,10 @@ const UploadPanel = () => {
         {isSuccess && (
           <p className="mt-2 text-sm text-green-500">Upload successful!</p>
         )}
+        {/* <div className="mt-3">
+          {" "}
+          <Button onClick={handleAddSui}>Add Sui</Button>
+        </div> */}
       </CardContent>
     </Card>
   );

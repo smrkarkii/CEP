@@ -11,6 +11,9 @@ import {
   getContentObjects,
 } from "@/services/contentServices";
 import CopyButton from "@/components/CopyButton";
+import { useEnokiFlow } from "@mysten/enoki/react";
+import { BuyToken } from "@/services/buyCoinService";
+import { toast } from "sonner";
 
 interface Creator {
   id: string;
@@ -45,7 +48,9 @@ const CreatorPage = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBuying, setIsBuying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const flow = useEnokiFlow();
 
   useEffect(() => {
     const fetchCreatorData = async () => {
@@ -93,6 +98,30 @@ const CreatorPage = () => {
 
   const toggleFollow = () => {
     setIsFollowing(!isFollowing);
+  };
+
+  const handleBuyToken = async () => {
+    if (!flow) {
+      toast.error("no wallet", {
+        description: "Wallet connection is required to buy tokens.",
+      });
+      return;
+    }
+
+    try {
+      setIsBuying(true);
+      await BuyToken(flow);
+      toast.success("YAY", {
+        description: "You've successfully purchased tokens.",
+      });
+    } catch (error) {
+      console.error("Error buying token:", error);
+      toast.error("Failed to purchase", {
+        description: "Failed to purchase tokens. Please try again later.",
+      });
+    } finally {
+      setIsBuying(false);
+    }
   };
 
   if (isLoading) {
@@ -156,6 +185,13 @@ const CreatorPage = () => {
               onClick={toggleFollow}
             >
               {isFollowing ? "Following" : "Follow"}
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleBuyToken}
+              disabled={isBuying}
+            >
+              {isBuying ? "Processing..." : "Buy Token"}
             </Button>
           </div>
         </div>
