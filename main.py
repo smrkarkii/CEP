@@ -1,3 +1,5 @@
+import json
+
 from fastapi import FastAPI, File, UploadFile, Query, HTTPException, Body, Form, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -8,7 +10,6 @@ import tempfile
 import uvicorn
 from vector_db.qdrant_wrapper import QdrantWrapper
 from llm.qa_system import DocumentQA
-import json
 
 app = FastAPI(title="AI API", description="API for vector database operations and LLM interactions")
 
@@ -199,7 +200,12 @@ async def chat_with_image_rag(
     4. Performs inference with an LLM
     """
     try:
-        print(f"\n\nGot response: query:{query}\n collection_name:{collection_name}\n metadata_filter:{metadata_filter}\n limit:{limit}\n use_metadata:{use_metadata}\n model_name:{model_name}\n file:{file}")
+        print(f"\n\nGot input request with: query:{query}\n collection_name:{collection_name}\n metadata_filter:{type(metadata_filter)}{metadata_filter}\n limit:{limit}\n use_metadata:{use_metadata}\n model_name:{model_name}\n file:{file}")
+        if not metadata_filter or metadata_filter =="None" or metadata_filter == "null" or metadata_filter == "undefined":
+            import json
+            metadata_filter = json.dumps({"source": "blog"})
+            print(f"new_metadata_filter:{type(metadata_filter)}{metadata_filter}")
+        
         # Parse metadata_filter from string to dict if provided
         metadata_filter_dict = None
         if metadata_filter:
@@ -252,7 +258,7 @@ async def chat_with_image_rag(
                 raise HTTPException(status_code=500, detail=f"Image processing failed: {str(e)}")
         
         # Step 3: Construct the prompt
-        prompt = "Please answer the query strictly based on the context. If the context does not contain the answer, please say something like: couldn't find specific information regarding your question. \n\n"
+        prompt = "Please answer the query based on the context. If the context does not contain the answer, please say something like: couldn't find specific information regarding your question. \n\n"
         
         # Add document context
         if results_formatted:
