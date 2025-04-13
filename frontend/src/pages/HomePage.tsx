@@ -131,7 +131,7 @@ const HomePage = () => {
                 <div className="border rounded-md p-4 flex flex-col gap-6 items-center">
                   <span>
                     Register as a Content Creator to upload your content on
-                    cre8space.
+                    ChainFluence.
                   </span>
                   <Button onClick={handleRegisterNowClick}>Register now</Button>
                   <Dialog
