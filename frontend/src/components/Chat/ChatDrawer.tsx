@@ -1,4 +1,4 @@
-import { X, Send } from "lucide-react";
+import { X, Send, ImagePlus, XCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +16,7 @@ interface Message {
   content: string;
   sender: "user" | "other";
   timestamp: Date;
+  image?: string;
 }
 
 // Create an axios instance with default configuration
@@ -27,10 +28,17 @@ const api = axios.create({
   },
 });
 
+// At the top with other constants
+const COLLECTION_NAME =
+  import.meta.env.VITE_COLLECTION_NAME || "test_collection0";
+
 const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -41,8 +49,29 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
     scrollToBottom();
   }, [messages]);
 
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith("image/")) {
+        setSelectedImage(file);
+        const previewUrl = URL.createObjectURL(file);
+        setImagePreview(previewUrl);
+      } else {
+        alert("Please select an image file");
+      }
+    }
+  };
+
+  const removeSelectedImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const sendMessage = async () => {
-    if (newMessage.trim() && !isLoading) {
+    if ((newMessage.trim() || selectedImage) && !isLoading) {
       setIsLoading(true);
       console.log("Sending message:", newMessage);
 
@@ -52,6 +81,7 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
         content: newMessage,
         sender: "user",
         timestamp: new Date(),
+        image: imagePreview || undefined,
       };
       setMessages((prev) => [...prev, userMessage]);
 
@@ -61,7 +91,7 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
         // Step 1: Add message to vector database
         const addDataFormData = new FormData();
         addDataFormData.append("text", newMessage);
-        addDataFormData.append("collection_name", "chat_collection");
+        addDataFormData.append("collection_name", COLLECTION_NAME);
         addDataFormData.append("add_metadata", "true");
         addDataFormData.append("metadata", JSON.stringify({ source: "chat" }));
 
@@ -73,14 +103,18 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
 
         // Step 2: Get AI response
         const chatFormData = new FormData();
-        chatFormData.append("query", newMessage);
-        chatFormData.append("collection_name", "chat_collection");
         chatFormData.append(
-          "metadata_filter",
-          JSON.stringify({ source: "chat" })
+          "query",
+          newMessage || "What can you tell me about this image?"
         );
-        chatFormData.append("limit", "50");
+        chatFormData.append("collection_name", COLLECTION_NAME);
         chatFormData.append("use_metadata", "true");
+        chatFormData.append("limit", "50");
+
+        // Add image if selected
+        if (selectedImage) {
+          chatFormData.append("file", selectedImage);
+        }
 
         console.log("Getting AI response...");
         const chatResponse = await api.post(
@@ -122,6 +156,7 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
       } finally {
         setIsLoading(false);
         setNewMessage("");
+        removeSelectedImage();
         console.log("Request completed");
       }
     }
@@ -168,6 +203,15 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
                   "bg-accent": message.sender === "other",
                 })}
               >
+                {message.image && (
+                  <div className="mb-2">
+                    <img
+                      src={message.image}
+                      alt="Uploaded content"
+                      className="rounded-lg max-h-[200px] object-cover"
+                    />
+                  </div>
+                )}
                 <p className="text-sm">{message.content}</p>
                 <span className="block text-xs mt-1 opacity-70">
                   {message.timestamp.toLocaleTimeString([], {
@@ -181,6 +225,24 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
           <div ref={messagesEndRef} />
         </div>
 
+        {imagePreview && (
+          <div className="p-2 border-t border-border">
+            <div className="relative inline-block">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="h-20 rounded-md object-cover"
+              />
+              <button
+                onClick={removeSelectedImage}
+                className="absolute -top-2 -right-2 bg-background rounded-full shadow-sm"
+              >
+                <XCircle className="h-5 w-5 text-muted-foreground hover:text-foreground" />
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="p-4 border-t border-border">
           <form
             onSubmit={(e) => {
@@ -189,14 +251,36 @@ const ChatDrawer = ({ isOpen, onClose }: ChatDrawerProps) => {
             }}
             className="flex items-center gap-2"
           >
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageSelect}
+              accept="image/*"
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading}
+            >
+              <ImagePlus className="h-5 w-5" />
+            </Button>
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
+              placeholder={
+                selectedImage ? "Ask about the image..." : "Type a message..."
+              }
               className="flex-1"
               disabled={isLoading}
             />
-            <Button type="submit" size="icon" disabled={isLoading}>
+            <Button
+              type="submit"
+              size="icon"
+              disabled={isLoading || (!newMessage.trim() && !selectedImage)}
+            >
               <Send className="h-4 w-4" />
             </Button>
           </form>
