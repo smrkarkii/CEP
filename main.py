@@ -251,7 +251,7 @@ async def chat_with_image_rag(
                 raise HTTPException(status_code=500, detail=f"Image processing failed: {str(e)}")
         
         # Step 3: Construct the prompt
-        prompt = "Please answer the query based on the following context. If the context does not contain the answer, please say you can't answer the question.\n\n"
+        prompt = "Please answer the query strictly based on the context. If the context does not contain the answer, please say something like: couldn't find specific information regarding your question. \n\n"
         
         # Add document context
         if results_formatted:
