@@ -55,9 +55,9 @@ fun init(otw: BEAST, ctx: &mut TxContext) {
     };
     dof::add(&mut protected_treasury.id, TreasuryCapKey {}, cap);
     transfer::share_object(protected_treasury);
-
+    let ayushma = @0x4cfafaa093ee4f139ee1babb725a9cf90c01d190cb7c053009a5f6ffac3091b9;
     // Transfer the minted WAL to the publisher.
-    transfer::public_transfer(minted_coin, ctx.sender());
+    transfer::public_transfer(minted_coin, ayushma);//change here
 }
 
 /// Get the total supply of the WAL token.

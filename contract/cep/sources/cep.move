@@ -34,7 +34,6 @@ module cep::contenteconomy;
         user_content:Table<address, vector<ID>>,//all content of a iser
         exchanges: Table<String, ID>,
         creators_list:vector<ID>//list of userprofile id
-        //what more needed?
     }
 
     public struct Content has key, store {
@@ -191,8 +190,14 @@ module cep::contenteconomy;
         content_registry.content_creator.add(blob_id, sender);
         let id = object::id(&content);
         // content_registry.registered_content.push_back(id);
-        let vec = content_registry.user_content.borrow_mut(sender);
-        vec.push_back(id);
+        // Check if the entry exists first, if not create it
+if (!table::contains(&content_registry.user_content, sender)) {
+    table::add(&mut content_registry.user_content, sender, vector::empty<ID>());
+};
+
+// Now it's safe to borrow and modify
+let vec = table::borrow_mut(&mut content_registry.user_content, sender);
+vector::push_back(vec, id);
         
         // transfer the content ownership to sender
         transfer::transfer(content, sender);
