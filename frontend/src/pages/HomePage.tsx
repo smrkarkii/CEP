@@ -12,6 +12,9 @@ import {
 import { SuiObjectData } from "@mysten/sui.js/client";
 import LoggedOutView from "@/components/Home/LoggedOutView";
 import { Loader } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import CreateProfile from "@/components/Profile/CreateProfile";
 
 const HomePage = () => {
   const { isLoggedIn, userDetails } = useLogin();
@@ -21,6 +24,14 @@ const HomePage = () => {
   const [userContentObjects, setUserContentObjects] = useState<SuiObjectData[]>(
     []
   );
+  const [isRegistered, setIsRegistered] = useState<boolean>(false);
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
+
+  const handleRegisterNowClick = (e: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsProfileDialogOpen(true);
+  };
 
   useEffect(() => {
     const fetchUserContentIds = async () => {
@@ -87,7 +98,25 @@ const HomePage = () => {
         <div className="lg:col-span-8 space-y-6">
           {isLoggedIn ? (
             <>
-              <UploadPanel />
+              {isRegistered ? (
+                <UploadPanel />
+              ) : (
+                <div className="border rounded-md p-4 flex flex-col gap-6 items-center">
+                  <span>
+                    Register as a Content Creator to upload your content on
+                    cre8space.
+                  </span>
+                  <Button onClick={handleRegisterNowClick}>Register now</Button>
+                  <Dialog
+                    open={isProfileDialogOpen}
+                    onOpenChange={setIsProfileDialogOpen}
+                  >
+                    <DialogContent className="sm:max-w-md">
+                      <CreateProfile />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              )}
               <AllCreators />
             </>
           ) : (

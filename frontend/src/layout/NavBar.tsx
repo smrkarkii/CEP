@@ -126,13 +126,13 @@ const Navbar = () => {
                       </div>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
+                  {/* <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={handleProfileClick}>
                     <div className="w-full flex items-center gap-2 cursor-pointer">
                       <User /> Profile
                     </div>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+                  <DropdownMenuSeparator /> */}
                   <DropdownMenuItem onClick={logOut}>
                     <LogOut />
                     Log Out
