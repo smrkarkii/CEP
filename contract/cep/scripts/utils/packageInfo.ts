@@ -1,0 +1,5 @@
+export const BEAST = 0x6eac6af09998862d16f7e68a8caad690751e63ff0b851d0327004b0297a3e3ec
+
+export const packageId = 0xa1d97168a230d9bc36e4fc0c629bc5e9d91f921a31122da887e72c25aa1609d6
+export const ContentRegistry = 0x47501ba823e90874a2c78a3af3a125cccdb62df546477269f7f1f1e103d76c86
+export const AdminCap = 0x63a37317be9c7276c5b26c1f0084908691f03220de4d7e3b4747481edb1c66ca
