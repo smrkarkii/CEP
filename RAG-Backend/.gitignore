@@ -1,0 +1,6 @@
+**.env
+.archive/
+**__pycache__/
+**.venv/
+**todo.md
+**AIChat (Front-end)
